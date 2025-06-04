@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>플랭크 타이머</title>
   <link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@500&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * {
@@ -148,7 +149,7 @@
 
     function saveRecord(seconds) {
       const now = new Date();
-      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const dateStr = now.toISOString().split('T')[0];
       const record = { date: dateStr, seconds: seconds };
 
       let records = JSON.parse(localStorage.getItem("plankRecords") || "[]");
@@ -166,7 +167,7 @@
 
     function getDayIndex(dateStr) {
       const date = new Date(dateStr);
-      return date.getDay(); // 0 (일요일) ~ 6 (토요일)
+      return date.getDay();
     }
 
     function showRecords() {
@@ -181,7 +182,7 @@
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - today.getDay());
 
-      const dayTotals = [0, 0, 0, 0, 0, 0, 0]; // 일~토
+      const dayTotals = [0, 0, 0, 0, 0, 0, 0];
 
       records.slice().reverse().forEach((rec) => {
         const li = document.createElement("li");
@@ -228,6 +229,12 @@
     }
 
     showRecords();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
   </script>
 
 </body>
