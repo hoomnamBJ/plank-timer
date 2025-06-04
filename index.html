@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>플랭크 타이머</title>
   <link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -62,11 +63,8 @@
     }
     #records {
       margin-top: 40px;
-      max-width: 400px;
+      max-width: 500px;
       width: 100%;
-    }
-    #records h3 {
-      margin-bottom: 10px;
     }
     #recordList {
       list-style: none;
@@ -82,6 +80,9 @@
     #weeklyTotal {
       font-weight: bold;
       margin-top: 10px;
+    }
+    canvas {
+      margin-top: 30px;
     }
   </style>
 </head>
@@ -100,6 +101,8 @@
     <ul id="recordList"></ul>
     <p id="weeklyTotal">이번 주 누적 시간: 0초</p>
     <button onclick="clearRecords()">🗑️ 기록 모두 삭제</button>
+
+    <canvas id="weeklyChart" height="200"></canvas>
   </div>
 
   <script>
@@ -154,33 +157,6 @@
       showRecords();
     }
 
-    function showRecords() {
-      const recordList = document.getElementById("recordList");
-      const weeklyTotal = document.getElementById("weeklyTotal");
-      recordList.innerHTML = "";
-
-      let records = JSON.parse(localStorage.getItem("plankRecords") || "[]");
-      records = records.reverse();
-
-      let weekSum = 0;
-      const today = new Date();
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay()); // 일요일 기준
-
-      records.forEach((rec) => {
-        const li = document.createElement("li");
-        li.textContent = `${rec.date} - ${rec.seconds}초`;
-        recordList.appendChild(li);
-
-        const recDate = new Date(rec.date);
-        if (recDate >= weekStart) {
-          weekSum += rec.seconds;
-        }
-      });
-
-      weeklyTotal.textContent = `이번 주 누적 시간: ${weekSum}초`;
-    }
-
     function clearRecords() {
       if (confirm("정말로 모든 기록을 삭제할까요?")) {
         localStorage.removeItem("plankRecords");
@@ -188,7 +164,70 @@
       }
     }
 
-    showRecords(); // 페이지 처음 열릴 때 기록 보여줌
+    function getDayIndex(dateStr) {
+      const date = new Date(dateStr);
+      return date.getDay(); // 0 (일요일) ~ 6 (토요일)
+    }
+
+    function showRecords() {
+      const recordList = document.getElementById("recordList");
+      const weeklyTotal = document.getElementById("weeklyTotal");
+      const records = JSON.parse(localStorage.getItem("plankRecords") || "[]");
+
+      recordList.innerHTML = "";
+      let weekSum = 0;
+
+      const today = new Date();
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+
+      const dayTotals = [0, 0, 0, 0, 0, 0, 0]; // 일~토
+
+      records.slice().reverse().forEach((rec) => {
+        const li = document.createElement("li");
+        li.textContent = `${rec.date} - ${rec.seconds}초`;
+        recordList.appendChild(li);
+
+        const recDate = new Date(rec.date);
+        if (recDate >= weekStart) {
+          const dayIndex = recDate.getDay();
+          dayTotals[dayIndex] += rec.seconds;
+          weekSum += rec.seconds;
+        }
+      });
+
+      weeklyTotal.textContent = `이번 주 누적 시간: ${weekSum}초`;
+      updateChart(dayTotals);
+    }
+
+    let chart;
+
+    function updateChart(data) {
+      const ctx = document.getElementById("weeklyChart").getContext("2d");
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: ["일", "월", "화", "수", "목", "금", "토"],
+          datasets: [{
+            label: "요일별 플랭크 시간 (초)",
+            data: data,
+            backgroundColor: "#00b894"
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    showRecords();
   </script>
 
 </body>
